@@ -58,7 +58,9 @@ get '/:name' do |name|
     @friends_info << Twitter.users(ids)
   end
   @friends_info.flatten!
-  @friends_info.each { |friend| @friends << [friend.statuses_count / ((Time.now - Time.parse(friend.created_at))/86400), friend.screen_name] }
+  @friends_info.each do |friend| 
+    @friends << [friend.statuses_count / ((Time.now - Time.parse(friend.created_at))/86400), friend.screen_name]
+  end
   @friends.sort!.reverse!
   sum = 0
   @friends.each{|a| sum += a[0]}
