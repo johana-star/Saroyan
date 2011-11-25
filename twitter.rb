@@ -4,6 +4,10 @@ require 'sinatra'
 require 'time'
 require 'yaml'
 
+# TODO Cleanup Twitter.rb
+# TODO Create basic nav
+# TODO Fix "Internal Server Error"
+
 before do
   headers "Content-Type" => "text/html; charset=utf-8"
 end
@@ -38,8 +42,8 @@ get %r{/([[:digit:]])} do |page|
   @tweets = @client.home_timeline(:count => 100, :page => page)
   if @tweets != []
     @current_time = Time.now
-    @first_time = Time.parse(@tweets.first.created_at)
-    @last_time = Time.parse(@tweets.last.created_at)
+    @first_time = Time.parse(@tweets.first.created_at.to_s)
+    @last_time = Time.parse(@tweets.last.created_at.to_s)
     erb :index
   else
     redirect ('/no_tweets')  
@@ -49,17 +53,19 @@ end
 get '/:name' do |name|
   @name = "#{name}"
   @user = Twitter.user(@name)
+  @user_time_existed = (Time.now - Time.parse(@user.created_at.to_s))
+  @user_tweet_average = (@user.statuses_count / (@user_time_existed/86400)).round(2)
   authenticate
   @friends_ids = Twitter.friend_ids(@name).ids
   @friends_info = Array.new
   @friends = Array.new
-  until @friends_ids == []
+  until @friends_ids.empty?
     ids = @friends_ids.shift(100)
     @friends_info << Twitter.users(ids)
   end
   @friends_info.flatten!
   @friends_info.each do |friend| 
-    @friends << [friend.statuses_count / ((Time.now - Time.parse(friend.created_at))/86400), friend.screen_name]
+  @friends << [friend.statuses_count / ((Time.now - Time.parse(friend.created_at.to_s))/86400), friend.screen_name]
   end
   @friends.sort!.reverse!
   sum = 0
@@ -68,61 +74,11 @@ get '/:name' do |name|
   erb :friendly
 end
 
+get '/' do
+  erb :main
+end
+
 get '/*' do
   @splats = params[:splat]
   erb :four_oh_four
 end
-
-__END__
-
-@@ layout
-<html>
-  <head>
-    <title><%= @title %></title>
-    <style>
-      body { margin: 40px; font: 20px helvetica;}
-      #nav { margin: 16px; font: 16px helvetica;}
-      .username { font-weight: bold; color:blue;}
-      .tweet { }
-      .timestamp { font-style: italic; font-size: 85%; color: gray;}
-    </style>
-  </head>
-  <body>
-    <%= yield %>
-  </body>
-  
-  <div id="nav">Empty NAV
-	</div>
-</html>
-
-@@ index
-  <%= ((@current_time - @first_time)/3600).round %> hours ago to <%= ((@current_time - @last_time)/3600).round %> hours ago.
-  <% @tweets.each do |tweet| %>
-    <p>
-    <span class="username"><%= tweet.user.screen_name %></span>
-    <span class="tweet"><%= tweet.text %></span>
-    <span class="timestamp"><%= tweet.created_at %></span>
-    </p>
-  <% end %>
-  
-@@ no_tweets
-<p>Sorry, there are no tweets there.</p>
-
-@@ four_oh_four
-
-<big>404</big>
-<% @splats.each do |s| %>
-  <p>
-  <span><%= s %> wasn't found.</span>
-  </p>
-<% end %>
-
-@@ friendly
-
-<p><%= @name %> follows <%= @friends.count %> users who average <%= @average.round(2) %> tweets per day. They tweet <%= (@user.statuses_count/ ((Time.now - Time.parse(@user.created_at))/86400)).round(2) %></p> times a day.
-  <table>
-    <tr><th>Tweets per day</th><th>Username</th></tr>
-    <% @friends.each do |f| %>
-    <tr><td><%= f.first.round(2) %></td><td><a href="http://localhost:9393/<%= f.last %>">@<%= f.last %></a></td></tr>
-    <% end %>
-  </table>

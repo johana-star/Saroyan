@@ -1,0 +1,8 @@
+<%= ((@current_time - @first_time)/3600).round %> hours ago to <%= ((@current_time - @last_time)/3600).round %> hours ago.
+<% @tweets.each do |tweet| %>
+  <p>
+  <span class="username"><%= tweet.user.screen_name %></span>
+  <span class="tweet"><%= tweet.text %></span>
+  <span class="timestamp"><%= tweet.created_at.to_s %></span>
+  </p>
+<% end %>

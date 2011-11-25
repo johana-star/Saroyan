@@ -1,0 +1,7 @@
+<p><%= @name %> follows <%= @friends.count %> users who average <%= @average.round(2) %> tweets per day. This user tweets <%= @user_tweet_average %> times a day.</p>
+  <table>
+    <tr><th>Tweets per day</th><th>Username</th></tr>
+    <% @friends.each do |f| %>
+    <tr><td><%= f.first.round(2) %></td><td><a href="/<%= f.last %>">@<%= f.last %></a></td></tr>
+    <% end %>
+  </table>
